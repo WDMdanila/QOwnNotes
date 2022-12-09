@@ -25,7 +25,7 @@ void TodoItemTreeWidget::dropEvent(QDropEvent *e) {
     }
 
     // update relate item
-    calItem.setRelatedUid(destUid);
+    calItem.relatedUid = destUid;
     calItem.store();
 
     emit calendarItemUpdated(calItem);

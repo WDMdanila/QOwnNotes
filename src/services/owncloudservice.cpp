@@ -979,7 +979,7 @@ void OwnCloudService::removeCalendarItem(CalendarItem calItem,
                                          TodoDialog *dialog) {
     this->todoDialog = dialog;
 
-    QUrl url(calItem.getUrl());
+    QUrl url(calItem.url);
     QNetworkRequest r(url);
     addCalendarAuthHeader(&r);
 
@@ -1629,10 +1629,10 @@ void OwnCloudService::loadTodoItems(QString &data) {
                             CalendarItem::fetchByUrl(calendarItemUrl);
                         if (calItem.isFetched()) {
                             // check if calendar item was modified
-                            if (calItem.getETag() != etag) {
+                            if (calItem.etag != etag) {
                                 // store etag and last modified date
-                                calItem.setETag(etag);
-                                calItem.setLastModifiedString(lastModified);
+                                calItem.etag = etag;
+                                calItem.lastModifiedString = lastModified;
                                 calItem.store();
 
                                 // we want to update the item from server
@@ -2028,17 +2028,15 @@ void OwnCloudService::postCalendarItemToServer(CalendarItem calendarItem,
 
     calendarItem.generateNewICSData();
 
-    QUrl url(calendarItem.getUrl());
+    QUrl url(calendarItem.url);
     QNetworkRequest r;
     addCalendarAuthHeader(&r);
     r.setUrl(url);
 
     // build the request body
-    QString body = calendarItem.getICSData();
+    qDebug() << __func__ << " - 'body': " << calendarItem.icsData;
 
-    qDebug() << __func__ << " - 'body': " << body;
-
-    auto dataToSend = new QByteArray(body.toUtf8());
+    auto dataToSend = new QByteArray(calendarItem.icsData.toUtf8());
     r.setHeader(QNetworkRequest::ContentLengthHeader, dataToSend->size());
     r.setHeader(QNetworkRequest::ContentTypeHeader,
                 QStringLiteral("application/x-www-form-urlencoded"));
@@ -2058,7 +2056,7 @@ void OwnCloudService::postCalendarItemToServer(CalendarItem calendarItem,
 bool OwnCloudService::updateICSDataOfCalendarItem(CalendarItem *calItem) {
     auto *manager = new QNetworkAccessManager(this);
 
-    QUrl url(calItem->getUrl());
+    QUrl url(calItem->url);
     QNetworkRequest r;
 
     addCalendarAuthHeader(&r);
@@ -2091,7 +2089,7 @@ bool OwnCloudService::updateICSDataOfCalendarItem(CalendarItem *calItem) {
         QString icsData = reply->readAll();
 
         // set the new ics data
-        calItem->setICSData(icsData);
+        calItem->icsData = icsData;
 
         result = true;
     }

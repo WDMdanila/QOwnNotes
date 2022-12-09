@@ -36,44 +36,19 @@ class CalendarItem {
                                           const QString &lastModifiedString);
     static QList<CalendarItem> fetchAllByCalendar(const QString &calendar);
     static bool deleteAllByCalendar(const QString &calendar);
-    QString getUrl();
-    QString getCalendar();
-    QString getSummary();
-    QString getDescription();
-    void setSummary(const QString &text);
-    void setDescription(const QString &text);
     bool updateWithICSData(const QString &icsData);
-    QString getUid() const;
-    QString getRelatedUid() const;
     static CalendarItem fetchByUid(const QString &uid);
-    int getPriority();
     QString generateNewICSData();
-    QString getICSData();
-    void setPriority(int value);
-    void setICSData(const QString &text);
-    QString getETag();
-    QString getLastModifiedString();
     static CalendarItem fetchByUrl(const QUrl &url);
-    void setLastModifiedString(const QString &text);
-    void setETag(const QString &text);
     static QList<QUrl> fetchAllUrlsByCalendar(const QString &calendar);
-    void setCalendar(const QString &text);
     static CalendarItem createNewTodoItem(
         const QString &summary, const QString &calendar,
         const QString &relatedUid = QLatin1String(""));
-    void setUrl(const QUrl &url);
-    void setUid(const QString &text);
-    void setRelatedUid(const QString &text);
-    void setModified(const QDateTime &dateTime);
-    void setCreated(const QDateTime &dateTime);
-    void setCompleted(bool value);
     void updateCompleted(bool value);
     static QList<CalendarItem> fetchAll();
     static void updateAllSortPriorities();
-    QDateTime getAlarmDate();
     static int getCurrentCalendarIndex();
     static QString getCurrentCalendarUrl();
-    void setAlarmDate(const QDateTime &dateTime);
     static QList<CalendarItem> fetchAllForReminderAlert();
     static void alertTodoReminders();
     static QList<QString> searchAsUidList(const QString &text,
@@ -82,25 +57,27 @@ class CalendarItem {
     static bool removeAll();
     static int countAll();
 
-   private:
-    int id;
     QString summary;
-    QString url;
     QString description;
+    QString url;
     QString calendar;
     QString uid;
     QString relatedUid;
-    QString icsData;
-    QString etag;
-    QString lastModifiedString;
-    int priority;
-    int sortPriority;
-    bool hasDirtyData;
-    bool completed;
     QDateTime alarmDate;
     QDateTime created;
     QDateTime modified;
     QDateTime completedDate;
+    QString icsData;
+    QString etag;
+    QString lastModifiedString;
+    int priority;
+
+   private:
+    int id;
+    int sortPriority;
+    bool hasDirtyData;
+    bool completed;
+
     QHash<QString, QString> icsDataHash;
     QStringList icsDataKeyList;
     static QString decodeICSDataLine(QString line);

@@ -27,72 +27,6 @@ CalendarItem::CalendarItem() {
 
 int CalendarItem::getId() { return this->id; }
 
-QString CalendarItem::getSummary() { return this->summary; }
-
-QString CalendarItem::getCalendar() { return this->calendar; }
-
-QString CalendarItem::getUrl() { return this->url; }
-
-QString CalendarItem::getICSData() { return this->icsData; }
-
-QString CalendarItem::getUid() const { return this->uid; }
-
-QString CalendarItem::getRelatedUid() const { return this->relatedUid; }
-
-QString CalendarItem::getDescription() { return this->description; }
-
-int CalendarItem::getPriority() { return this->priority; }
-
-bool CalendarItem::getHasDirtyData() { return this->hasDirtyData; }
-
-QString CalendarItem::getLastModifiedString() {
-    return this->lastModifiedString;
-}
-
-QString CalendarItem::getETag() { return this->etag; }
-
-QDateTime CalendarItem::getAlarmDate() { return this->alarmDate; }
-
-void CalendarItem::setLastModifiedString(const QString &text) {
-    this->lastModifiedString = text;
-}
-
-void CalendarItem::setETag(const QString &text) { this->etag = text; }
-
-void CalendarItem::setSummary(const QString &text) { this->summary = text; }
-
-void CalendarItem::setUrl(const QUrl &url) { this->url = url.toString(); }
-
-void CalendarItem::setCalendar(const QString &text) { this->calendar = text; }
-
-void CalendarItem::setDescription(const QString &text) {
-    this->description = text;
-}
-
-void CalendarItem::setICSData(const QString &text) { this->icsData = text; }
-
-void CalendarItem::setUid(const QString &text) { this->uid = text; }
-
-void CalendarItem::setRelatedUid(const QString &text) {
-    this->relatedUid = text;
-}
-
-void CalendarItem::setCreated(const QDateTime &dateTime) {
-    this->created = dateTime;
-}
-
-void CalendarItem::setModified(const QDateTime &dateTime) {
-    this->modified = dateTime;
-}
-
-void CalendarItem::setAlarmDate(const QDateTime &dateTime) {
-    this->alarmDate = dateTime;
-}
-
-void CalendarItem::setPriority(int value) { this->priority = value; }
-
-void CalendarItem::setCompleted(bool value) { this->completed = value; }
-
 void CalendarItem::updateCompleted(bool value) {
     this->completed = value;
     if (value) {
@@ -1071,27 +1005,26 @@ CalendarItem CalendarItem::createNewTodoItem(const QString &summary,
                                              const QString &relatedUid) {
     QString uuidString = Utils::Misc::createUuidString();
     CalendarItem calItem;
-    calItem.setSummary(summary);
-    calItem.setCalendar(calendar);
-    calItem.setRelatedUid(relatedUid);
-    calItem.setUrl(
-        QUrl(getCurrentCalendarUrl() + "qownnotes-" + uuidString + ".ics"));
-    calItem.setICSData(
+    calItem.summary = summary;
+    calItem.calendar = calendar;
+    calItem.relatedUid = relatedUid;
+    calItem.url = QUrl(getCurrentCalendarUrl() + "qownnotes-" + uuidString + ".ics").toString();
+    calItem.icsData = (
         "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:ownCloud Calendar"
         "\nCALSCALE:GREGORIAN\nBEGIN:VTODO\nEND:VTODO"
         "\nEND:VCALENDAR");
-    calItem.setUid(uuidString);
+    calItem.uid = uuidString;
 
     QDateTime dateTime = QDateTime::currentDateTime();
-    calItem.setCreated(dateTime);
-    calItem.setModified(dateTime);
+    calItem.created = dateTime;
+    calItem.modified = dateTime;
 
     calItem.generateNewICSData();
 
     if (calItem.store()) {
         qDebug() << __func__ << " - 'calItem': " << calItem;
         qDebug() << __func__
-                 << " - 'calItem.getICSData()': " << calItem.getICSData();
+                 << " - 'calItem.getICSData()': " << calItem.icsData;
     }
 
     return calItem;
@@ -1162,7 +1095,7 @@ void CalendarItem::alertTodoReminders() {
         CalendarItem calItem = itr.next();
         QMessageBox::information(
             nullptr, QStringLiteral("Reminder"),
-            "Reminder: <strong>" + calItem.getSummary() + "</strong>");
+            "Reminder: <strong>" + calItem.summary + "</strong>");
     }
 }
 

@@ -6418,14 +6418,14 @@ void MainWindow::generateSystemTrayContextMenu() {
         while (itr.hasNext()) {
             CalendarItem task = itr.next();
 
-            QAction *action = taskMenu->addAction(task.getSummary());
+            QAction *action = taskMenu->addAction(task.summary);
             action->setIcon(QIcon::fromTheme(
                 QStringLiteral("view-task"),
                 QIcon(QStringLiteral(
                     ":icons/breeze-qownnotes/16x16/view-task.svg"))));
 
             connect(action, &QAction::triggered, this,
-                    [this, task]() { openTodoDialog(task.getUid()); });
+                    [this, task]() { openTodoDialog(task.uid); });
         }
     }
 

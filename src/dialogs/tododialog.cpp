@@ -22,14 +22,16 @@ TodoDialog::TodoDialog(const QString &taskUid, QWidget *parent)
     ui->setupUi(this);
     setupUi();
 
-    connect(ui->todoItemTreeWidget, &TodoItemTreeWidget::calendarItemUpdated, this,
-            &TodoDialog::updateCalendarItem);
+    connect(ui->todoItemTreeWidget, &TodoItemTreeWidget::calendarItemUpdated,
+            this, &TodoDialog::updateCalendarItem);
 
     // init the description edit search frame
     ui->descriptionEdit->initSearchFrame(ui->descriptionEditSearchFrame);
 
-    QString selectedText =
-        MainWindow::instance()->activeNoteTextEdit()->textCursor().selectedText();
+    QString selectedText = MainWindow::instance()
+                               ->activeNoteTextEdit()
+                               ->textCursor()
+                               .selectedText();
 
     // insert the selected note text in the new item edit
     if (!selectedText.isEmpty()) {
@@ -71,13 +73,11 @@ void TodoDialog::jumpToTask(const QString &taskUid) {
         // set a calendar item uid to jump to later on
         _jumpToCalendarItemUid = taskUid;
 
-        QString calendar = calendarItem.getCalendar();
-
         // if the calendar of the calendar item isn't the current one we
         // have to switch to it
-        if (ui->todoListSelector->currentText() != calendar) {
+        if (ui->todoListSelector->currentText() != calendarItem.calendar) {
             // select the correct calendar and then jump to the task item
-            ui->todoListSelector->setCurrentText(calendar);
+            ui->todoListSelector->setCurrentText(calendarItem.calendar);
         } else {
             // jump directly to the correct task item
             jumpToTodoListItem();
@@ -289,10 +289,10 @@ void TodoDialog::reloadTodoListItems() {
                 }
             }
 
-            // skip items that are not due today if the "Show only items due today"
-            // checkbox is checked
+            // skip items that are not due today if the "Show only items due
+            // today" checkbox is checked
             if (ui->showDueTodayItemsOnlyCheckBox->isChecked()) {
-                const auto alarmDate = calItem.getAlarmDate().date();
+                const auto alarmDate = calItem.alarmDate.date();
                 const auto todayDate = QDate::currentDate();
 
                 if (todayDate != alarmDate) {
@@ -300,28 +300,24 @@ void TodoDialog::reloadTodoListItems() {
                 }
             }
 
-            const QString uid = calItem.getUid();
-
             // skip items that were not fully loaded yet
-            if (uid.isEmpty()) {
+            if (calItem.uid.isEmpty()) {
                 continue;
             }
 
-            const QString relatedUid = calItem.getRelatedUid();
-
             auto *item = new QTreeWidgetItem();
-            item->setText(0, calItem.getSummary());
-            item->setData(0, Qt::UserRole, uid);
-            item->setData(0, Qt::UserRole + 1, relatedUid);
+            item->setText(0, calItem.summary);
+            item->setData(0, Qt::UserRole, calItem.uid);
+            item->setData(0, Qt::UserRole + 1, calItem.relatedUid);
             item->setCheckState(
                 0, calItem.isCompleted() ? Qt::Checked : Qt::Unchecked);
-            item->setText(1, calItem.getAlarmDate().toString());
-            item->setData(1, Qt::DisplayRole, calItem.getAlarmDate());
+            item->setText(1, calItem.alarmDate.toString());
+            item->setData(1, Qt::DisplayRole, calItem.alarmDate);
             item->setFlags(Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled |
                            Qt::ItemIsEnabled | Qt::ItemIsUserCheckable |
                            Qt::ItemIsSelectable);
 
-            if (relatedUid.isEmpty()) {
+            if (calItem.relatedUid.isEmpty()) {
                 ui->todoItemTreeWidget->addTopLevelItem(item);
             } else {
                 subItems.append(item);
@@ -360,7 +356,6 @@ void TodoDialog::reloadTodoListItems() {
     ui->todoItemTreeWidget->resizeColumnToContents(0);
     ui->todoItemTreeWidget->resizeColumnToContents(1);
 
-
     // set the current row of the task list to the first row
     jumpToTodoListItem();
 
@@ -392,8 +387,7 @@ void TodoDialog::jumpToTodoListItem() {
 
         // try to find a possible last created calendar item
         if ((item == nullptr) && lastCreatedCalendarItem.isFetched()) {
-            item = findTodoItemTreeWidgetItemByUID(
-                lastCreatedCalendarItem.getUid());
+            item = findTodoItemTreeWidgetItemByUID(lastCreatedCalendarItem.uid);
 
             // clear the last created calendar item if we found it in the list
             if (item != nullptr) {
@@ -403,8 +397,7 @@ void TodoDialog::jumpToTodoListItem() {
 
         if (item == nullptr) {
             // try to find the currently selected calendar item
-            item =
-                findTodoItemTreeWidgetItemByUID(currentCalendarItem.getUid());
+            item = findTodoItemTreeWidgetItemByUID(currentCalendarItem.uid);
         }
 
         if (item != nullptr) {
@@ -470,11 +463,11 @@ void TodoDialog::updateCurrentCalendarItemWithFormData() {
         priority = 10 - priority;
     }
 
-    currentCalendarItem.setPriority(priority);
-    currentCalendarItem.setSummary(ui->summaryEdit->text());
-    currentCalendarItem.setDescription(ui->descriptionEdit->toPlainText());
-    currentCalendarItem.setModified(QDateTime::currentDateTime());
-    currentCalendarItem.setAlarmDate(ui->reminderCheckBox->isChecked()
+    currentCalendarItem.priority = priority;
+    currentCalendarItem.summary = ui->summaryEdit->text();
+    currentCalendarItem.description = ui->descriptionEdit->toPlainText();
+    currentCalendarItem.modified = QDateTime::currentDateTime();
+    currentCalendarItem.alarmDate = (ui->reminderCheckBox->isChecked()
                                          ? ui->reminderDateTimeEdit->dateTime()
                                          : QDateTime());
     currentCalendarItem.store();
@@ -641,7 +634,8 @@ void TodoDialog::on_removeButton_clicked() {
  */
 void TodoDialog::on_reminderCheckBox_clicked() {
     if (ui->reminderCheckBox->isChecked()) {
-        QDateTime alarmDate = currentCalendarItem.getAlarmDate();
+        //TODO: look at this closer
+        QDateTime alarmDate = currentCalendarItem.alarmDate;
 
         // if no alarm date was set use the current date plus 1h
         if (!alarmDate.isValid()) {
@@ -694,7 +688,9 @@ void TodoDialog::on_newItemEdit_textChanged() {
         }
     } else {
         // show all items otherwise
-        Q_FOREACH (QTreeWidgetItem *item, allItems) { item->setHidden(false); }
+        Q_FOREACH (QTreeWidgetItem *item, allItems) {
+            item->setHidden(false);
+        }
     }
 
     // let's highlight the text from the search line edit
@@ -791,18 +787,20 @@ bool TodoDialog::eventFilter(QObject *obj, QEvent *event) {
 void TodoDialog::onSaveAndInsertButtonClicked() {
     on_saveButton_clicked();
 
-    QString selectedText =
-        MainWindow::instance()->activeNoteTextEdit()->textCursor().selectedText();
+    QString selectedText = MainWindow::instance()
+                               ->activeNoteTextEdit()
+                               ->textCursor()
+                               .selectedText();
 
-    QString taskUrl = "task://" + currentCalendarItem.getUid();
+    QString taskUrl = "task://" + currentCalendarItem.uid;
 
     // insert a link to the task in the current note
-    QString summaryText = selectedText.isEmpty()
-                              ? currentCalendarItem.getSummary()
-                              : selectedText;
+    QString summaryText =
+        selectedText.isEmpty() ? currentCalendarItem.summary : selectedText;
     QString insertText = "[" + summaryText + "](" + taskUrl + ")";
 
-    MainWindow::instance()->activeNoteTextEdit()->textCursor().insertText(insertText);
+    MainWindow::instance()->activeNoteTextEdit()->textCursor().insertText(
+        insertText);
     close();
 }
 
@@ -842,16 +840,17 @@ void TodoDialog::on_todoItemTreeWidget_currentItemChanged(
 
     currentCalendarItem = CalendarItem::fetchByUid(uid);
     if (currentCalendarItem.isFetched()) {
-        ui->summaryEdit->setText(currentCalendarItem.getSummary());
+        ui->summaryEdit->setText(currentCalendarItem.summary);
         ui->summaryEdit->setCursorPosition(0);
-        ui->descriptionEdit->setPlainText(currentCalendarItem.getDescription());
+        ui->descriptionEdit->setPlainText(currentCalendarItem.description);
 
-        QDateTime alarmDate = currentCalendarItem.getAlarmDate();
+        QDateTime alarmDate = currentCalendarItem.alarmDate;
         ui->reminderCheckBox->setChecked(alarmDate.isValid());
         ui->reminderDateTimeEdit->setDateTime(alarmDate);
         on_reminderCheckBox_clicked();
 
-        int priority = currentCalendarItem.getPriority();
+        // TODO: same as other one
+        int priority = currentCalendarItem.priority;
 
         if (priority > 0) {
             // 1 is the highest priority and 9 is the lowest priority
